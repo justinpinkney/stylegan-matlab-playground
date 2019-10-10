@@ -49,7 +49,7 @@ function x = synthesisBlock(x, w1, w2, scale, weights)
     weight = dlarray(weights.(name("Conv0_up_weight")), 'SSCU');
     
     bias = weights.(name("Conv0_up_bias"))';
-    x = conv(x, weight, zeros(size(bias)), 1, sqrt(2), true);
+    x = conv(x, weight, zeros(size(bias), 'like', bias), 1, sqrt(2), true);
     x = blur(x);
     x = x + shiftdim(bias, -2);
     
@@ -86,13 +86,19 @@ function x = conv(x, weight, bias, padding, gain, upblock)
     wmul = gain*numel(weight(:,:,:,1)) ^ (-0.5);
     weight = wmul*weight;
     if upblock && size(x, 1) >= 64
+        isGPU = isa(extractdata(weight), "gpuArray");
+        if isGPU
+            weight = gather(weight);
+        end
         weight = padarray(weight, [1, 1, 0, 0]);
         weight = weight(1:end-1, 1:end-1, :, :) + ...
                 weight(1:end-1, 2:end, :, :) + ...
                 weight(2:end, 2:end, :, :) + ...
                 weight(2:end, 1:end-1, :, :);
         tweight = dlarray(weight, 'SSUC');
-        
+        if isGPU
+            tweight = gpuArray(tweight);
+        end
         x = dltranspconv(x, tweight, bias, "Stride", 2, "Cropping", 1);
     else
         if upblock
