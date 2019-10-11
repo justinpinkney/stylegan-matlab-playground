@@ -1,3 +1,4 @@
+rng("default")
 z = dlarray(single(randn(1, 1, 512, 1)), 'SSCB');
 filename = fullfile(projectRoot(), "weights", "ffhq.mat");
 weights = load(filename);
