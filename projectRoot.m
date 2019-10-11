@@ -1,3 +1,3 @@
 function folder = projectRoot()
-    folder = fileparts(mfilename('fulpath'));
+    folder = fileparts(mfilename('fullpath'));
 end
