@@ -12,5 +12,5 @@ function w = mapping(z, pretrained)
         w = leakyrelu(w, 0.2);
     end
     
-    w = repmat(w, 1, 18, 1);
+    w = repmat(w, 1, 1, 18);
 end

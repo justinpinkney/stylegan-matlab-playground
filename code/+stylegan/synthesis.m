@@ -1,18 +1,25 @@
-function x = synthesis(w, weights, x)
+function x = synthesis(w, weights, x, noiseMethod)
 
-    if nargin < 3
+    if ischar(noiseMethod) || isstring(noiseMethod)
+        noiseMethod = str2func(noiseMethod);
+    end
+
+%     assert(size(w, 2) == 1, "Batch w not supported");
+    w = squeeze(w);
+
+    if nargin < 3 || isempty(x)
         bias = weights.G_synthesis_4x4_Const_bias;
         constant = weights.G_synthesis_4x4_Const_const;
         input = constant + bias;
         input = permute(input, [3, 4, 2, 1]);
         x = dlarray(input, 'SSCB');
+%         x = x(4:-1:1,4:-1:1,:,:);
     end
     
-    
     % epilogue 1
-    x = inputBlock(x, w(:, 1), w(:, 2), weights);
+    x = inputBlock(x, w(:, 1), w(:, 2), weights, noiseMethod);
     for iScale = 2:9
-        x = synthesisBlock(x, w(:, iScale*2-1), w(:, iScale*2), 2^(iScale+1), weights);
+        x = synthesisBlock(x, w(:, iScale*2-1), w(:, iScale*2), 2^(iScale+1), weights, noiseMethod);
     end
     
     weight = dlarray(weights.G_synthesis_ToRGB_lod0_weight, 'SSCU');
@@ -22,11 +29,11 @@ function x = synthesis(w, weights, x)
     
 end
 
-function x = inputBlock(x, w1, w2, weights)
-weight = weights.G_synthesis_4x4_Const_StyleMod_weight';
+function x = inputBlock(x, w1, w2, weights, noiseMethod)
+    weight = weights.G_synthesis_4x4_Const_StyleMod_weight';
     bias = weights.G_synthesis_4x4_Const_StyleMod_bias';
     noiseWeight = shiftdim(weights.G_synthesis_4x4_Const_Noise_weight, -1);
-    x = epilogue(x, w1, weight, bias, noiseWeight);
+    x = epilogue(x, w1, weight, bias, noiseWeight, noiseMethod);
     
     % conv
     weight = dlarray(weights.G_synthesis_4x4_Conv_weight, 'SSCU');
@@ -38,10 +45,10 @@ weight = weights.G_synthesis_4x4_Const_StyleMod_weight';
     weight = weights.G_synthesis_4x4_Conv_StyleMod_weight';
     bias = weights.G_synthesis_4x4_Conv_StyleMod_bias';
     noiseWeight = shiftdim(weights.G_synthesis_4x4_Conv_Noise_weight, -1);
-    x = epilogue(x, w2, weight, bias, noiseWeight);
+    x = epilogue(x, w2, weight, bias, noiseWeight, noiseMethod);
 end
 
-function x = synthesisBlock(x, w1, w2, scale, weights)
+function x = synthesisBlock(x, w1, w2, scale, weights, noiseMethod)
     prefix = "G_synthesis_" + scale + "x" + scale + "_";
     name = @(x) strcat(prefix, x);
     
@@ -57,7 +64,7 @@ function x = synthesisBlock(x, w1, w2, scale, weights)
     weight = weights.(name("Conv0_up_StyleMod_weight"))';
     bias = weights.(name("Conv0_up_StyleMod_bias"));
     noiseWeight = shiftdim(weights.(name("Conv0_up_Noise_weight")), -1);
-    x = epilogue(x, w1, weight, bias, noiseWeight);
+    x = epilogue(x, w1, weight, bias, noiseWeight, noiseMethod);
     
     % conv1
     weight = dlarray(weights.(name("Conv1_weight")), 'SSCU');
@@ -69,7 +76,7 @@ function x = synthesisBlock(x, w1, w2, scale, weights)
     weight = weights.(name("Conv1_StyleMod_weight"))';
     bias = weights.(name("Conv1_StyleMod_bias"))';
     noiseWeight = shiftdim(weights.(name("Conv1_Noise_weight")), -1);
-    x = epilogue(x, w2, weight, bias, noiseWeight);
+    x = epilogue(x, w2, weight, bias, noiseWeight, noiseMethod);
 end
 
 
@@ -108,9 +115,10 @@ function x = conv(x, weight, bias, padding, gain, upblock)
     end
 end
 
-function x = epilogue(x, w, weight, bias, noiseWeight)
+function x = epilogue(x, w, weight, bias, noiseWeight, noiseMethod)
+    
     noiseSize = size(x(:,:,1,:));
-    x = x + randnCached(noiseSize).*noiseWeight;
+    x = x + noiseMethod(noiseSize).*noiseWeight;
     x = leakyrelu(x, 0.2);
     x = batchnorm(x, zeros(size(x, 3), 1), ones(size(x, 3), 1));
     

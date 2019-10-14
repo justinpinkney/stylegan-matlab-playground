@@ -13,7 +13,7 @@ featureNet = dlnetwork(layerGraph(vgg.Layers(1:end-2)));
 %%
 ax = axes(figure);
 lr = 0.01;
-for i = 1:200
+for i = 1:1000
     [featureLoss, gradsW, gradsX, im] = dlfeval(@step, w, imTarget, weights, featureNet);
     [w, gradAvgW, gradSqAvgW] = adamupdate(...
                w, gradsW, gradAvgW, gradSqAvgW, i, lr);
@@ -25,7 +25,7 @@ end
 
 
 function [featureLoss, gradsW, gradsX, im] = step(w, imTarget, pretrained, featureNet)
-    im = stylegan.synthesis(w, pretrained);
+    im = stylegan.synthesis(w, pretrained, [], "randn");
 %     mseLoss = mean((im - imTarget).^2, 'all');
     
     prepIm = @(x) avgpool((x+1)/2*255, 4, "Stride", 4);
