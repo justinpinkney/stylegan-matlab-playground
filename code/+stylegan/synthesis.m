@@ -1,4 +1,4 @@
-function x = synthesis(w, weights, x, noiseMethod)
+function x = synthesis(w, weights, x, noiseMethod, angle)
 
     if ischar(noiseMethod) || isstring(noiseMethod)
         noiseMethod = str2func(noiseMethod);
@@ -12,13 +12,37 @@ function x = synthesis(w, weights, x, noiseMethod)
         constant = weights.G_synthesis_4x4_Const_const;
         input = constant + bias;
         input = permute(input, [3, 4, 2, 1]);
+%         input = imrotate(input, angle, "bilinear", "crop");
+%         input = imresize(input, angle, "OutputSize", size(input(:,:,1)));
         x = dlarray(input, 'SSCB');
-%         x = x(4:-1:1,4:-1:1,:,:);
     end
     
-    % epilogue 1
+    % epilogue 5
     x = inputBlock(x, w(:, 1), w(:, 2), weights, noiseMethod);
     for iScale = 2:9
+%         layer = 4;
+%         if iScale == layer
+%             input = extractdata(x);
+%             input = imresize(input, 1+angle, "bilinear");
+% %             input = imrotate(input, angle, "bilinear", "crop");
+%             Rin = imref2d(size(input(:,:,1)), [-1, 1], [-1, 1]);
+%             tform = affine2d(eye(3));
+%             tform.T(1, 1) = 1+angle;
+%             tform.T(2, 2) = 1+angle;
+%             input = imwarp(input, Rin, tform, "OutputView", Rin);
+%             x = dlarray(input, "SSCB");
+%         end
+%         if iScale == layer+1
+%             input = extractdata(x);
+%             input = imresize(input, 1/(1+angle), "bilinear");
+% %             input = imrotate(input, -angle, "bilinear", "crop");
+% Rin = imref2d(size(input(:,:,1)), [-1, 1], [-1, 1]);
+%             tform = affine2d(eye(3));
+%             tform.T(1, 1) = 1./(1+angle);
+%             tform.T(2, 2) = 1./(1+angle);
+%             input = imwarp(input, Rin, tform, "OutputView", Rin);
+%             x = dlarray(input, "SSCB");
+%         end
         x = synthesisBlock(x, w(:, iScale*2-1), w(:, iScale*2), 2^(iScale+1), weights, noiseMethod);
     end
     

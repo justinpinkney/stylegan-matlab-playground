@@ -5,17 +5,27 @@ if useGPU
 else
     env = @(x) x;
 end
-
+% 
 filename = fullfile(projectRoot(), "weights", "ffhq.mat");
 weights = load(filename);
 weights = dlupdate(env, weights);
-%%
+% 
 z = env(dlarray(single(randn(1, 1, 512, 1)), 'SSCB'));
 
 w = stylegan.mapping(z, weights);
-tic
-im = stylegan.synthesis(w, weights, [], "randn");
-toc
-outIm = (1+extractdata(im))/2;
+
+% jack = load("jack.mat");
+% cleve = load("cleve.mat");
+%%
 f = figure();
-imshow(outIm)
+n = 100;
+for i = 1:n
+% r = @(x) returnNoise(x, i/100);
+alpha = 5*(i-1)/n;
+im = stylegan.synthesis(w, weights, [], "randnCached", alpha);
+
+outIm = (1+extractdata(im))/2;
+imwrite(outIm, sprintf("frames/%04d.jpg", i));
+
+% imshow(outIm)
+end
