@@ -1,5 +1,6 @@
 % embed
-imTarget = 2*(single(im)./255) - 1;
+
+imTarget = 2*(single(imresize(im, [256, 256]))./255) - 1;
 gradAvgW = [];
 gradSqAvgW = [];
 % gradAvgX = [];
@@ -8,7 +9,7 @@ gradSqAvgW = [];
 %%
 vgg = vgg16();
 featureNet = dlnetwork(layerGraph(vgg.Layers(1:end-2)));
-
+weights = load('C:\code\internal\stylegan-matlab\weights\ffhq.mat');
 
 %%
 ax = axes(figure);

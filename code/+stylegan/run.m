@@ -6,7 +6,7 @@ else
     env = @(x) x;
 end
 
-filename = fullfile(projectRoot(), "weights", "ffhq.mat");
+filename = fullfile(projectRoot(), "weights", "ukiyoe-faces.mat");
 weights = load(filename);
 weights = dlupdate(env, weights);
 %%

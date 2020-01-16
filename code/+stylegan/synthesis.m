@@ -19,7 +19,7 @@ function x = synthesis(w, weights, x, noiseMethod, angle)
     
     % epilogue 5
     x = inputBlock(x, w(:, 1), w(:, 2), weights, noiseMethod);
-    for iScale = 2:9
+    for iScale = 2:8
 %         layer = 4;
 %         if iScale == layer
 %             input = extractdata(x);

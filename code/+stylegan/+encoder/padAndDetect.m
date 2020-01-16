@@ -1,5 +1,5 @@
 function [im, landmarks] = padAndDetect(im)
-    padSize = 100;
+    padSize = 500;
     im2 = padarray(im, [padSize, padSize], "symmetric");
     
     im2 = imgaussfilt(im2, 10);
