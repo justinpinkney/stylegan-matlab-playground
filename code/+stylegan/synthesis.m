@@ -1,4 +1,8 @@
-function x = synthesis(w, weights, x, noiseMethod, angle)
+function x = synthesis(w, weights, x, noiseMethod)
+
+    if nargin < 4
+        noiseMethod = @randn;
+    end
 
     if ischar(noiseMethod) || isstring(noiseMethod)
         noiseMethod = str2func(noiseMethod);

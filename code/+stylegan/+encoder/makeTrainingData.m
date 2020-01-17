@@ -1,7 +1,13 @@
-function [ws, filenames] = makeTrainingData(destination, n, useGPU)
+function [ws, filenames] = makeTrainingData(destination, n, useGPU, weightFile)
+
+    dataFile = "data.mat";
 
     if nargin < 3
         useGPU = false;
+    end
+    
+    if nargin < 4
+        weightFile = "ffhq.mat";
     end
 
     if useGPU
@@ -12,26 +18,22 @@ function [ws, filenames] = makeTrainingData(destination, n, useGPU)
 
     rng("default");
     mkdir(destination);
-    filename = fullfile(projectRoot(), "weights", "ffhq.mat");
+    filename = fullfile(projectRoot(), "weights", weightFile);
     weights = load(filename);
     weights = dlupdate(env, weights);
     
-    zPool = env(dlarray(single(randn(1, 1, 512, n)), 'SSCB'));
-    wPool = stripdims(stylegan.mapping(zPool, weights));
-
     for iFile = 1:n
         if mod(iFile, 100) == 0
             disp(iFile);
         end
         
-        splitPos = randi(17);
-        w1 = randi(n);
-        w2 = randi(n);
-        thisW = cat(3, wPool(:, w1, 1:splitPos), ...
-                        wPool(:, w2, splitPos+1:end));
-        thisW = dlarray(thisW, "CBU");
-        
-        im = stylegan.synthesis(thisW, weights);
+    
+        z = env(dlarray(single(randn(1, 1, 512, 1)), 'SSCB'));
+
+        w = stylegan.mapping(z, weights);
+
+    
+        im = stylegan.synthesis(w, weights);
         outIm = (1+extractdata(im))/2;
         outIm = uint8(255*gather(outIm));
         outIm = imresize(outIm, [256, 256]);
@@ -40,7 +42,9 @@ function [ws, filenames] = makeTrainingData(destination, n, useGPU)
         filename = sprintf("%s.jpg", id);
         imwrite(outIm, fullfile(destination, filename));
         
-%         ws(iFile, :) = squeeze(gather(extractdata(w(:,1))))';
-%         filenames{iFile} = filename;
+        ws(iFile, :) = squeeze(gather(extractdata(w(:,1))))';
+        filenames{iFile} = filename;
     end
+    
+    save(dataFile, "ws", "filenames");
 end
