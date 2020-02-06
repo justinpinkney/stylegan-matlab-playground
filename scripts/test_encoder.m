@@ -1,4 +1,4 @@
-im = imread(valData{370,1});
+% im = imread(valData{370,1});
 filename = "https://images.immediate.co.uk/production/volatile/sites/3/2018/01/GettyImages-459889298-ba32cf7.jpg?quality=90&lb=940,626&background=white";
 im = imread(filename);
 
@@ -21,11 +21,11 @@ for i = 1
 %     [im, m] = imread(filename, i);
 %     im = 255*ind2rgb(im, m);
 % im = imread(filename);
-% [im, newLandmarks] = padAndDetect(im);
+[im, landmarks] = stylegan.encoder.padAndDetect(im);
 % if ~isempty(newLandmarks)
 %     landmarks = newLandmarks;
 % end
-%     im = stylegan.encoder.alignFace(im, landmarks);
+    im = stylegan.encoder.alignFace(im, landmarks);
 
     im = imresize(im, [256, 256]);
     % im = fliplr(im);

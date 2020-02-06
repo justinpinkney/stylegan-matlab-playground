@@ -19,11 +19,13 @@ function x = synthesis(w, weights, x, noiseMethod)
 %         input = imrotate(input, angle, "bilinear", "crop");
 %         input = imresize(input, angle, "OutputSize", size(input(:,:,1)));
         x = dlarray(input, 'SSCB');
+%         x = cat(2, x, x);
+%         x = x(2:3, :, :, :);
     end
     
     % epilogue 5
     x = inputBlock(x, w(:, 1), w(:, 2), weights, noiseMethod);
-    for iScale = 2:8
+    for iScale = 2:9 % 9 = 1024
 %         layer = 4;
 %         if iScale == layer
 %             input = extractdata(x);
