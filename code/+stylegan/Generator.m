@@ -2,9 +2,13 @@ classdef Generator < handle
     
     properties
         Scale % 2^Scale = resolution
+        CurrentScale
         Weights
         UseGPU
         NumMappingLayers = 8
+        NoiseMethod = @randn
+        PreBlockCallback
+        PostBlockCallback
     end
     
     methods
@@ -55,18 +59,46 @@ classdef Generator < handle
         function output = synthesis(this, w)
             w = squeeze(w);
 
-            bias = this.Weights.G_synthesis_4x4_Const_bias;
-            constant = this.Weights.G_synthesis_4x4_Const_const;
-            input = constant + bias;
-            input = permute(input, [3, 4, 2, 1]);
-            x = dlarray(input, 'SSCB');
+            x = this.getInput(this.Weights);
 
-            x = this.inputBlock(x, w(:, 1), w(:, 2), this.Weights, @randn);
+            this.CurrentScale = 2;
+            [x, w] = this.doCallback("pre", x, w);
+            x = this.inputBlock(x, w(:, 1), w(:, 2), this.Weights, this.NoiseMethod);
+            [x, w] = this.doCallback("post", x, w);
+            
             for iScale = 2:(this.Scale-1)
-                x = this.synthesisBlock(x, w(:, iScale*2-1), w(:, iScale*2), 2^(iScale+1), this.Weights, @randn);
+                this.CurrentScale = iScale + 1;
+                [x, w] = this.doCallback("pre", x, w);
+                
+                resolution = 2^(iScale+1);
+                styleWeights1 = w(:, iScale*2-1);
+                styleWeights2 = w(:, iScale*2);
+                x = this.synthesisBlock(x, styleWeights1, ...
+                                            styleWeights2, ...
+                                            resolution, ...
+                                            this.Weights, ...
+                                            this.NoiseMethod);
+
+                [x, w] = this.doCallback("post", x, w);
             end
 
             output = this.toRGB(x, this.Weights);
+        end
+        
+        function [x, w] = doCallback(this, location, x, w)
+            switch location
+                case "pre"
+                    if ~isempty(this.PreBlockCallback)
+                        [x, w] = this.PreBlockCallback(this.CurrentScale, x, w);
+                    end
+                case "post"
+                    if ~isempty(this.PostBlockCallback)
+                        [x, w] = this.PostBlockCallback(this.CurrentScale, x, w);
+                    end
+                otherwise
+                    error("stylegan:unkownCallback", ...
+                        "Didn't recognise '%s'", location);
+            end
         end
     end
     
@@ -77,6 +109,14 @@ classdef Generator < handle
             sizes = str2double(extractBetween(convNames, ...
                                             "G_synthesis_", "x"));
             scale = log(max(sizes))/log(2);
+        end
+        
+        function x = getInput(weights)
+            bias = weights.G_synthesis_4x4_Const_bias;
+            constant = weights.G_synthesis_4x4_Const_const;
+            input = constant + bias;
+            input = permute(input, [3, 4, 2, 1]);
+            x = dlarray(input, 'SSCB');
         end
                 
         function output = toRGB(x, weights)
