@@ -171,16 +171,3 @@ function x = blur(x)
     weight = repmat(weight, 1, 1, 1, 1, size(x, 3));
     x = dlconv(x, weight, 0, "Padding", 1);
 end
-
-function noise = randnCached(noiseSize)
-    persistent cache
-    if isempty(cache)
-        cache = struct();
-    end
-    
-    s = matlab.lang.makeValidName(num2str(noiseSize));
-    if ~isfield(cache, s)
-        cache.(s) = randn(noiseSize);
-    end
-    noise = cache.(s);
-end
