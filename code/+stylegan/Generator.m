@@ -212,12 +212,21 @@ classdef Generator < handle
             end
         end
 
-        function x = epilogue(x, w, weight, bias, noiseWeight, noiseMethod)
+        function [x, mu, sigma] = epilogue(x, w, weight, bias, noiseWeight, noiseMethod, mu, sigma)
+            
+            if nargin < 7
+                mu = [];
+                sigma = [];
+            end
 
             noiseSize = size(x(:,:,1,:));
             x = x + noiseMethod(noiseSize).*noiseWeight;
             x = leakyrelu(x, 0.2);
-            x = batchnorm(x, zeros(size(x, 3), 1), ones(size(x, 3), 1));
+            if isempty(mu)
+                [x, mu, sigma] = batchnorm(x, zeros(size(x, 3), 1), ones(size(x, 3), 1));
+            else
+                x = batchnorm(x, zeros(size(x, 3), 1), ones(size(x, 3), 1), mu, sigma);
+            end
 
             style = stylegan.linear(w, weight, bias, 1, true, 1);
             x = x.*shiftdim(1 + style(1:size(x, 3)), -2) + shiftdim(style(size(x, 3)+1:end), -2);
