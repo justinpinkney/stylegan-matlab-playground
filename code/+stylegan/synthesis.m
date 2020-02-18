@@ -12,14 +12,14 @@ function x = synthesis(w, weights, x, noiseMethod)
     w = squeeze(w);
 
     if nargin < 3 || isempty(x)
-        bias = weights.G_synthesis_4x4_Const_bias;
-        constant = weights.G_synthesis_4x4_Const_const;
+        bias = this.Weights.G_synthesis_4x4_Const_bias;
+        constant = this.Weights.G_synthesis_4x4_Const_const;
         input = constant + bias;
         input = permute(input, [3, 4, 2, 1]);
 %         input = imrotate(input, angle, "bilinear", "crop");
 %         input = imresize(input, angle, "OutputSize", size(input(:,:,1)));
         x = dlarray(input, 'SSCB');
-%         x = cat(2, x, x);
+        x = cat(2, x, x.*a);
 %         x = x(2:3, :, :, :);
     end
     
@@ -170,17 +170,4 @@ function x = blur(x)
     weight = weight./sum(weight(:));
     weight = repmat(weight, 1, 1, 1, 1, size(x, 3));
     x = dlconv(x, weight, 0, "Padding", 1);
-end
-
-function noise = randnCached(noiseSize)
-    persistent cache
-    if isempty(cache)
-        cache = struct();
-    end
-    
-    s = matlab.lang.makeValidName(num2str(noiseSize));
-    if ~isfield(cache, s)
-        cache.(s) = randn(noiseSize);
-    end
-    noise = cache.(s);
 end

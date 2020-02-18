@@ -13,14 +13,14 @@ weights1 = load(filename);
 filename = fullfile(projectRoot(), "weights", "ffhq.mat");
 weights2 = load(filename);
 %%
-% weights = updateW(weights1, weights2);
-% 
-% weights = dlupdate(env, weights);
+weights = updateW(weights1, weights2);
+
+weights = dlupdate(env, weights);
 z = env(dlarray(single(randn(1, 1, 512, 1)), 'SSCB'));
 
-w = stylegan.mapping(z, weights2);
+w = stylegan.mapping(z, weights);
 tic
-im = stylegan.synthesis(w, weights2, [], "randn");
+im = stylegan.synthesis(w, weights, [], "randn");
 toc
 outIm = (1+extractdata(im))/2;
 f = figure();
@@ -36,7 +36,7 @@ function z = updateW(x, y)
 %             continue
 %         end
         
-        if contains(thisField, "4x4_Con")
+        if contains(thisField, "8x8_Con")
             thisX = x.(thisField);
             thisY = y.(thisField);
             z.(thisField) = alpha*thisX+(1-alpha)*thisY;
