@@ -9,15 +9,15 @@ v2 = scale.*v2;
 
 avg = weights.dlatent_avg;
 
-n = 200;
+n = 20;
 
 
 g = stylegan.Generator(weightFile);
 g.NoiseMethod = @stylegan.randnCached;
 
-
-
+p = progress.Bar("Interpolating", n);
 for i = 0:n
+    p.update();
     z = circleInterp(i/n, v1, v2);
     z = avg' + z;
     z = dlarray(single(reshape(z, 1, 1, [])), 'SSCB');

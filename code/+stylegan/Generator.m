@@ -9,6 +9,8 @@ classdef Generator < handle
         NoiseMethod = @randn
         PreBlockCallback
         PostBlockCallback
+        TruncationPsi = 0.7;
+        MaxTruncationScale = 8;
     end
     
     methods
@@ -37,7 +39,16 @@ classdef Generator < handle
             end
             
             w = this.mapping(z);
+            w = this.applyTruncation(w);
             output = this.synthesis(w);
+        end
+        
+        function wOut = applyTruncation(this, wIn)
+            wOut = wIn;
+            avg = this.Weights.dlatent_avg';
+            for iScale = 1:2*(this.MaxTruncationScale - 1)
+                wOut(:, 1, iScale) = (wOut(:, 1, iScale) - avg).*this.TruncationPsi + avg;
+            end
         end
         
         function w = mapping(this, z)

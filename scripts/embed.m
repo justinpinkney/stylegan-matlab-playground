@@ -11,6 +11,9 @@ vgg = vgg16();
 featureNet = dlnetwork(layerGraph(vgg.Layers(1:end-2)));
 generator = stylegan.Generator('C:\code\internal\stylegan-matlab\weights\mccabe.mat');
 
+z = dlarray(single(randn(1, 1, 512, 1)), 'SSCB');
+w = generator.mapping(z);
+
 %%
 ax = axes(figure);
 lr = 0.01;
@@ -31,8 +34,15 @@ function [featureLoss, gradsW, gradsX, im] = step(w, imTarget, generator, featur
     
     pooling = 2;
     prepIm = @(x) avgpool((x+1)/2*255, pooling, "Stride", pooling);
-    imFeatures = featureNet.forward(prepIm(im), "Output", "conv3_2");
-    targetFeatures = featureNet.forward(dlarray((imTarget+1)/2*255, "SSCB"), "Output", "conv3_2");
+    imGenerated = prepIm(im);
+    target = dlarray((imTarget+1)/2*255, "SSCB");
+
+%     imFeatures = imGenerated;
+%     targetFeatures = target;
+    
+    imFeatures = featureNet.forward(imGenerated, "Output", "conv3_2");
+    targetFeatures = featureNet.forward(target, "Output", "conv3_2");
+    
     featureLoss = mean((imFeatures - targetFeatures).^2, 'all');
     gradsW = dlgradient(featureLoss, w);
     gradsX = [];
