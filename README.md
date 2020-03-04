@@ -9,4 +9,4 @@ Does not provide the ability to train models. But does allow you to play with th
 ## Examples
 
 - [Slit scanning](examples/slitscan.md)
-- [Slit scanning](examples/modify_learned_input.md)
+- [Modifying the learned input](examples/modify_learned_input.md)
