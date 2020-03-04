@@ -111,6 +111,39 @@ classdef Generator < handle
                         "Didn't recognise '%s'", location);
             end
         end
+        
+        function x = synthesisBlock(this, x, w1, w2, scale, weights, noiseMethod)
+            
+            combinedUpblock = this.CurrentScale >= 7;
+            prefix = "G_synthesis_" + scale + "x" + scale + "_";
+            name = @(x) strcat(prefix, x);
+
+            % conv
+            weight = dlarray(weights.(name("Conv0_up_weight")), 'SSCU');
+
+            bias = weights.(name("Conv0_up_bias"))';
+            x = stylegan.Generator.conv(x, weight, zeros(size(bias), 'like', bias), 1, sqrt(2), true, combinedUpblock);
+            x = stylegan.Generator.blur(x);
+            x = x + shiftdim(bias, -2);
+
+            % epi1
+            weight = weights.(name("Conv0_up_StyleMod_weight"))';
+            bias = weights.(name("Conv0_up_StyleMod_bias"));
+            noiseWeight = shiftdim(weights.(name("Conv0_up_Noise_weight")), -1);
+            x = stylegan.Generator.epilogue(x, w1, weight, bias, noiseWeight, noiseMethod);
+
+            % conv1
+            weight = dlarray(weights.(name("Conv1_weight")), 'SSCU');
+
+            bias = weights.(name("Conv1_bias"))';
+            x = stylegan.Generator.conv(x, weight, bias);
+
+            % epilogue 2
+            weight = weights.(name("Conv1_StyleMod_weight"))';
+            bias = weights.(name("Conv1_StyleMod_bias"))';
+            noiseWeight = shiftdim(weights.(name("Conv1_Noise_weight")), -1);
+            x = stylegan.Generator.epilogue(x, w2, weight, bias, noiseWeight, noiseMethod);
+        end
     end
     
     methods (Static)
@@ -156,39 +189,7 @@ classdef Generator < handle
             x = stylegan.Generator.epilogue(x, w2, weight, bias, noiseWeight, noiseMethod);
         end
 
-        function x = synthesisBlock(x, w1, w2, scale, weights, noiseMethod)
-            prefix = "G_synthesis_" + scale + "x" + scale + "_";
-            name = @(x) strcat(prefix, x);
-
-            % conv
-            weight = dlarray(weights.(name("Conv0_up_weight")), 'SSCU');
-
-            bias = weights.(name("Conv0_up_bias"))';
-            x = stylegan.Generator.conv(x, weight, zeros(size(bias), 'like', bias), 1, sqrt(2), true);
-            x = stylegan.Generator.blur(x);
-            x = x + shiftdim(bias, -2);
-
-            % epi1
-            weight = weights.(name("Conv0_up_StyleMod_weight"))';
-            bias = weights.(name("Conv0_up_StyleMod_bias"));
-            noiseWeight = shiftdim(weights.(name("Conv0_up_Noise_weight")), -1);
-            x = stylegan.Generator.epilogue(x, w1, weight, bias, noiseWeight, noiseMethod);
-
-            % conv1
-            weight = dlarray(weights.(name("Conv1_weight")), 'SSCU');
-
-            bias = weights.(name("Conv1_bias"))';
-            x = stylegan.Generator.conv(x, weight, bias);
-
-            % epilogue 2
-            weight = weights.(name("Conv1_StyleMod_weight"))';
-            bias = weights.(name("Conv1_StyleMod_bias"))';
-            noiseWeight = shiftdim(weights.(name("Conv1_Noise_weight")), -1);
-            x = stylegan.Generator.epilogue(x, w2, weight, bias, noiseWeight, noiseMethod);
-        end
-
-
-        function x = conv(x, weight, bias, padding, gain, upblock)
+        function x = conv(x, weight, bias, padding, gain, upblock, combinedUpscale)
             if nargin < 4
                 padding = 1;
             end
@@ -198,9 +199,12 @@ classdef Generator < handle
             if nargin < 6
                 upblock = false;
             end
+            if nargin  < 7
+                combinedUpscale = false;
+            end
             wmul = gain*numel(weight(:,:,:,1)) ^ (-0.5);
             weight = wmul*weight;
-            if upblock && size(x, 1) >= 64
+            if upblock && combinedUpscale
                 isGPU = isa(extractdata(weight), "gpuArray");
                 if isGPU
                     weight = gather(weight);
