@@ -26,7 +26,7 @@ classdef Generator < handle
         end
         
         function im = image(this, generated)
-            im = (1+extractdata(generated))/2;
+            im = gather(1+extractdata(generated))/2;
         end
         
         function output = generate(this, z)

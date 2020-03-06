@@ -8,5 +8,6 @@ Does not provide the ability to train models. But does allow you to play with th
 
 ## Examples
 
+- [Different types of interpolatio](examples/interpolation.md)
 - [Slit scanning](examples/slitscan.md)
 - [Modifying the learned input](examples/modify_learned_input.md)
