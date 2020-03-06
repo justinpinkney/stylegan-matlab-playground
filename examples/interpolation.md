@@ -29,7 +29,7 @@ figure;
 imshowpair(imresize(out1, 0.25), imresize(out2, 0.25), "montage");
 ```
 
-\includegraphics[width=\maxwidth{70.84796788760663em}]{figure_0.png}
+![figure_0.png](interpolation_images/figure_0.png)
 
 
 
@@ -46,7 +46,7 @@ end
 plotResult(out, "Linear interpolation in z")
 ```
 
-\includegraphics[width=\maxwidth{80.28098344204717em}]{figure_1.png}
+![figure_1.png](interpolation_images/figure_1.png)
 
 
 
@@ -68,7 +68,7 @@ end
 plotResult(out, "Spherical linear interpolation in z")
 ```
 
-\includegraphics[width=\maxwidth{80.28098344204717em}]{figure_2.png}
+![figure_2.png](interpolation_images/figure_2.png)
 
 
 
@@ -89,7 +89,7 @@ end
 plotResult(out, "Linear interpolation in w")
 ```
 
-\includegraphics[width=\maxwidth{80.28098344204717em}]{figure_3.png}
+![figure_3.png](interpolation_images/figure_3.png)
 
 
 
